@@ -27,8 +27,8 @@ Write-Host '[OK] Ket noi Internet: OK' -ForegroundColor Green
 $baseUrl = 'https://raw.githubusercontent.com/mson-ssh/windowssetup/main'
 
 # Khi chay local (test), load tu duong dan tuong doi
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-if ($scriptDir -and (Test-Path (Join-Path $scriptDir 'modules\logger.ps1'))) {
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path -ErrorAction SilentlyContinue
+if ($scriptDir -and (Test-Path (Join-Path $scriptDir 'modules\logger.ps1') -ErrorAction SilentlyContinue)) {
     Write-Host '[*] Che do LOCAL: Load modules tu dia...' -ForegroundColor Magenta
     . (Join-Path $scriptDir 'modules\logger.ps1')
     . (Join-Path $scriptDir 'modules\installer.ps1')
@@ -48,9 +48,13 @@ Initialize-Log
 Write-Log 'setup.ps1 da load xong tat ca modules'
 
 # Load va chay main.ps1
-$mainPath = Join-Path $scriptDir 'main.ps1'
-if (Test-Path $mainPath) {
-    . $mainPath
+if ($scriptDir) {
+    $mainPath = Join-Path $scriptDir 'main.ps1'
+    if (Test-Path $mainPath) {
+        . $mainPath
+    } else {
+        Invoke-Expression (Invoke-RestMethod "$baseUrl/main.ps1")
+    }
 } else {
     Invoke-Expression (Invoke-RestMethod "$baseUrl/main.ps1")
 }
