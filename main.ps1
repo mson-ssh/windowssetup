@@ -5,8 +5,22 @@ Add-Type -AssemblyName PresentationCore
 Add-Type -AssemblyName WindowsBase
 
 # --- Duong dan config ---
-$scriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
-$configPath = Join-Path $scriptDir 'config\apps.json'
+$scriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path -ErrorAction SilentlyContinue
+if (-not $scriptDir) {
+    # Khi chay qua irm | iex, dung duong dan tam
+    $scriptDir = $env:TEMP
+    $configPath = Join-Path $scriptDir 'winsetup-config.json'
+    # Tai apps.json tu GitHub
+    $configUrl = 'https://raw.githubusercontent.com/mson-ssh/windowssetup/main/config/apps.json'
+    try {
+        Invoke-RestMethod $configUrl | Set-Content $configPath -Encoding UTF8
+    } catch {
+        Write-Host "[!] Khong the tai config tu GitHub: $_" -ForegroundColor Red
+        exit 1
+    }
+} else {
+    $configPath = Join-Path $scriptDir 'config\apps.json'
+}
 
 # =====================================================================
 # XAML
