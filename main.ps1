@@ -1,4 +1,4 @@
-﻿# main.ps1 - GUI WPF cho WinSetup Pro
+# main.ps1 - GUI WPF cho WinSetup Pro
 
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
