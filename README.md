@@ -7,8 +7,10 @@ Công cụ cài đặt và tối ưu Windows tự động với giao diện WPF.
 Chạy lệnh sau trong PowerShell **với quyền Administrator**:
 
 ```powershell
-irm https://raw.githubusercontent.com/mson-ssh/windowssetup/main/setup.ps1 | iex
+irm https://raw.githubusercontent.com/mson-ssh/windowssetup/main/install.ps1 | iex
 ```
+
+> **Lưu ý:** Script sẽ tự động tải toàn bộ project từ GitHub, giải nén và chạy GUI.
 
 ## Tính năng
 
