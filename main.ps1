@@ -29,7 +29,7 @@ if (-not $scriptDir) {
 <Window
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="WinSetup Pro v1.0"
+    Title="MiniApp"
     Width="780" Height="580"
     WindowStartupLocation="CenterScreen"
     ResizeMode="CanMinimize"
