@@ -27,17 +27,24 @@ if (Test-Path $tempDir) {
 New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
 # Download and extract
+Write-Host "Downloading..." -ForegroundColor $c.Info -NoNewline
 try {
     $ProgressPreference = 'SilentlyContinue'
     Invoke-WebRequest -Uri $zipUrl -OutFile $zipFile -UseBasicParsing
+    Write-Host " OK" -ForegroundColor $c.OK
+    
+    Write-Host "Extracting..." -ForegroundColor $c.Info -NoNewline
     Expand-Archive -Path $zipFile -DestinationPath $extractDir -Force
     $projectDir = Get-ChildItem $extractDir -Directory | Select-Object -First 1 -ExpandProperty FullName
+    Write-Host " OK" -ForegroundColor $c.OK
 } catch {
-    Write-Host "Error: $_" -ForegroundColor Red
+    Write-Host " FAILED" -ForegroundColor $c.Error
+    Write-Host "Error: $_" -ForegroundColor $c.Error
     exit 1
 }
 
 # Run
+Write-Host "Launching GUI..." -ForegroundColor $c.Info
 Set-Location $projectDir
 & "$projectDir\run.ps1"
 
