@@ -7,7 +7,7 @@ function Initialize-Log {
     if (-not (Test-Path $logDir)) {
         New-Item -ItemType Directory -Path $logDir -Force | Out-Null
     }
-    Write-Log 'Bat dau WinSetup Pro v1.0'
+    Write-Host 'Ready to Install :)' -ForegroundColor Green
 }
 
 function Write-Log {
