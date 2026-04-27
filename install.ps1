@@ -13,9 +13,6 @@ $c = @{
     Error = 'Red'
 }
 
-Write-Host "`n=== WinSetup Pro Installer ===" -ForegroundColor $c.Info
-Write-Host "Downloading and extracting..." -ForegroundColor $c.Info
-
 # URLs
 $repoUrl = 'https://github.com/mson-ssh/windowssetup'
 $zipUrl  = "$repoUrl/archive/refs/heads/main.zip"
@@ -29,38 +26,21 @@ if (Test-Path $tempDir) {
 }
 New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
-# Download ZIP
-Write-Host "> Downloading from GitHub..." -ForegroundColor $c.Info -NoNewline
+# Download and extract
 try {
     $ProgressPreference = 'SilentlyContinue'
     Invoke-WebRequest -Uri $zipUrl -OutFile $zipFile -UseBasicParsing
-    Write-Host " [OK] $('{0:N2}' -f ((Get-Item $zipFile).Length / 1MB)) MB" -ForegroundColor $c.OK
-} catch {
-    Write-Host " [ERROR]" -ForegroundColor $c.Error
-    Write-Host "  Failed to download: $_" -ForegroundColor $c.Error
-    exit 1
-}
-
-# Extract ZIP
-Write-Host "> Extracting archive..." -ForegroundColor $c.Info -NoNewline
-try {
     Expand-Archive -Path $zipFile -DestinationPath $extractDir -Force
     $projectDir = Get-ChildItem $extractDir -Directory | Select-Object -First 1 -ExpandProperty FullName
-    Write-Host " [OK]" -ForegroundColor $c.OK
 } catch {
-    Write-Host " [ERROR]" -ForegroundColor $c.Error
-    Write-Host "  Failed to extract: $_" -ForegroundColor $c.Error
+    Write-Host "Error: $_" -ForegroundColor Red
     exit 1
 }
 
-# Run the main script
-Write-Host "> Launching WinSetup Pro GUI..." -ForegroundColor $c.Info
-Write-Host "  (Please wait, loading WPF components...)" -ForegroundColor $c.Warn
+# Run
 Set-Location $projectDir
 & "$projectDir\run.ps1"
 
 # Cleanup
-Write-Host "`n> Cleaning up temporary files..." -ForegroundColor $c.Info
 Set-Location $env:TEMP
 Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
-Write-Host "  [OK] Done!`n" -ForegroundColor $c.OK
