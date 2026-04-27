@@ -120,7 +120,7 @@ if (-not $scriptDir) {
 
         <TabControl Grid.Row="0" Background="#FFFFFF" BorderThickness="1" BorderBrush="#DDDDDD" x:Name="tabMain">
 
-            <TabItem Header="📦  Install Apps">
+            <TabItem Header="Install Apps">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
@@ -136,7 +136,7 @@ if (-not $scriptDir) {
                 </Grid>
             </TabItem>
 
-            <TabItem Header="🔑  Activation">
+            <TabItem Header="Activation">
                 <StackPanel Margin="20,16,20,16">
                     <TextBlock x:Name="lblActStatus" FontSize="14" Margin="0,0,0,20"
                                Foreground="#444444" Text="Checking status..."/>
@@ -150,7 +150,7 @@ if (-not $scriptDir) {
                 </StackPanel>
             </TabItem>
 
-            <TabItem Header="⚡  Optimize">
+            <TabItem Header="Optimize">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
