@@ -131,7 +131,8 @@ if (-not $scriptDir) {
                     </ScrollViewer>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,0">
                         <Button x:Name="btnSelectAll" Content="Select All" Width="100" Margin="0,0,8,0" Background="#0078D4"/>
-                        <Button x:Name="btnDeselectAll" Content="Deselect" Width="90" Background="#6C757D"/>
+                        <Button x:Name="btnDeselectAll" Content="Deselect" Width="90" Margin="0,0,8,0" Background="#6C757D"/>
+                        <Button x:Name="btnDefault" Content="Default" Width="90" Background="#107C10"/>
                     </StackPanel>
                 </Grid>
             </TabItem>
@@ -207,6 +208,7 @@ $rbOhook      = $window.FindName('rbOhook')
 $btnActivate  = $window.FindName('btnActivate')
 $btnSelectAll = $window.FindName('btnSelectAll')
 $btnDeselect  = $window.FindName('btnDeselectAll')
+$btnDefault   = $window.FindName('btnDefault')
 $btnDryRun    = $window.FindName('btnDryRun')
 $progressBar  = $window.FindName('progressBar')
 $lblStatus    = $window.FindName('lblStatus')
@@ -254,6 +256,26 @@ if (Test-Path $configPath) {
 
 $btnSelectAll.Add_Click({ foreach ($cb in $appCheckboxes.Values) { $cb.IsChecked = $true  } })
 $btnDeselect.Add_Click({  foreach ($cb in $appCheckboxes.Values) { $cb.IsChecked = $false } })
+
+# Default button - select recommended apps
+$btnDefault.Add_Click({
+    # First deselect all
+    foreach ($cb in $appCheckboxes.Values) { $cb.IsChecked = $false }
+    
+    # Then select default apps
+    $defaultApps = @(
+        'Google Chrome', 'Zoom', 'Telegram', 'Zalo', 
+        'Foxit PDF Reader', 'EV Key', '7-Zip', 'WinRAR', 
+        'K-Lite Codec Pack', 'UltraViewer', 
+        'VC++ Redist 2015-2022 x64', 'VC++ Redist 2015-2022 x86'
+    )
+    
+    foreach ($appName in $defaultApps) {
+        if ($appCheckboxes.ContainsKey($appName)) {
+            $appCheckboxes[$appName].IsChecked = $true
+        }
+    }
+})
 
 # =====================================================================
 # TAB 2: Activation status
