@@ -1,5 +1,5 @@
 # setup.ps1 - Entry point cua WinSetup Pro
-# Nguoi dung chay: irm https://raw.githubusercontent.com/<user>/winsetup-pro/main/setup.ps1 | iex
+# Nguoi dung chay: irm https://raw.githubusercontent.com/mson-ssh/windowssetup/main/setup.ps1 | iex
 
 #region --- Kiem tra quyen Admin ---
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
@@ -24,7 +24,7 @@ Write-Host '[OK] Ket noi Internet: OK' -ForegroundColor Green
 #endregion
 
 #region --- Tai modules tu GitHub vao RAM ---
-$baseUrl = 'https://raw.githubusercontent.com/<user>/winsetup-pro/main'
+$baseUrl = 'https://raw.githubusercontent.com/mson-ssh/windowssetup/main'
 
 # Khi chay local (test), load tu duong dan tuong doi
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
