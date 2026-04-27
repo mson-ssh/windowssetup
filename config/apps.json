@@ -1,0 +1,97 @@
+{
+  "groups": [
+    {
+      "name": "Web Browsers",
+      "apps": [
+        { "name": "Google Chrome",  "url": "https://pub-50d6cf4af6964541b0621bbc9bc26690.r2.dev/ChromeSetup.exe",                                             "args": "/silent /install",          "winget": "Google.Chrome",                      "choco": "googlechrome",  "scoop": "googlechrome" },
+        { "name": "Opera",          "url": "https://net.geo.opera.com/opera/stable/windows",                                                                    "args": "/silent /install",          "winget": "Opera.Opera",                        "choco": "opera",         "scoop": "opera" },
+        { "name": "Mozilla Firefox", "url": "https://download.mozilla.org/?product=firefox-latest&os=win64&lang=vi",                                             "args": "-ms",                       "winget": "Mozilla.Firefox",                    "choco": "firefox",       "scoop": "firefox" },
+        { "name": "Brave Browser",   "url": "https://laptop-updates.brave.com/latest/winx64",                                                                   "args": "/silent /install",          "winget": "Brave.Brave",                        "choco": "brave",         "scoop": "brave" }
+      ]
+    },
+    {
+      "name": "Messaging",
+      "apps": [
+        { "name": "Zoom",            "url": "https://zoom.us/client/latest/ZoomInstallerFull.exe",                                                               "args": "/quiet",                    "winget": "Zoom.Zoom",                           "choco": "zoom",          "scoop": "zoom" },
+        { "name": "Discord",         "url": "https://discord.com/api/downloads/distributions/app/installers/latest?channel=stable&platform=win&arch=x86",       "args": "-s",                        "winget": "Discord.Discord",                    "choco": "discord",       "scoop": "discord" },
+        { "name": "Microsoft Teams", "url": "https://go.microsoft.com/fwlink/p/?linkid=2196106",                                                                 "args": "",                          "winget": "Microsoft.Teams",                    "choco": "microsoft-teams", "scoop": null },
+        { "name": "Telegram",        "url": "https://telegram.org/dl/desktop/win64",                                                                             "args": "/VERYSILENT",               "winget": "Telegram.TelegramDesktop",           "choco": "telegram",      "scoop": "telegram" },
+        { "name": "Zalo",            "url": "https://zalo.me/download/zalo-pc?utm=90000",                                                                        "args": "/SILENT",                   "winget": null,                                  "choco": null,            "scoop": null }
+      ]
+    },
+    {
+      "name": "Documents",
+      "apps": [
+        { "name": "Foxit PDF Reader",     "url": "https://pub-50d6cf4af6964541b0621bbc9bc26690.r2.dev/foxit-reader_120.exe",                                    "args": "/quiet",                    "winget": "Foxit.FoxitReader",                   "choco": "foxitreader",   "scoop": null },
+        { "name": "Nitro PDF",            "url": null,                                                                                                            "args": "/quiet",                    "winget": "NitroPDF.NitroPDF",                  "choco": "nitropdf",      "scoop": null },
+        { "name": "Microsoft Office 2024","url": "https://pub-50d6cf4af6964541b0621bbc9bc26690.r2.dev/OfficeSetup.exe",                                          "args": "",                          "winget": null,                                  "choco": null,            "scoop": null },
+        { "name": "EV Key",              "url": "https://pub-50d6cf4af6964541b0621bbc9bc26690.r2.dev/EVKey.exe",                                                   "args": "",                          "winget": null,                                  "choco": null,            "scoop": null }
+      ]
+    },
+    {
+      "name": "Compression",
+      "apps": [
+        { "name": "7-Zip",   "url": "https://www.7-zip.org/a/7z2409-x64.exe",          "args": "/S",           "winget": "7zip.7zip",       "choco": "7zip",    "scoop": "7zip" },
+        { "name": "WinRAR",  "url": "https://www.rarlab.com/rar/winrar-x64-701.exe",   "args": "/S",           "winget": "RARLab.WinRAR",  "choco": "winrar",  "scoop": "winrar" }
+      ]
+    },
+    {
+      "name": "Media",
+      "apps": [
+        { "name": "VLC Media Player",    "url": "https://get.videolan.org/vlc/3.0.23/win32/vlc-3.0.23-win32.exe",                                                "args": "/S",                        "winget": "VideoLAN.VLC",                        "choco": "vlc",           "scoop": "vlc" },
+        { "name": "K-Lite Codec Pack",   "url": "https://files2.codecguide.com/K-Lite_Codec_Pack_1810_Basic.exe",                                               "args": "/verysilent",               "winget": null,                                  "choco": "k-litecodecpackbasic", "scoop": null },
+        { "name": "foobar2000",          "url": "https://www.foobar2000.org/files/foobar2000_v2.1.5.exe",                                                        "args": "/S",                        "winget": "PeterPawlowski.foobar2000",           "choco": "foobar2000",    "scoop": "foobar2000" }
+      ]
+    },
+    {
+      "name": "Online Storage",
+      "apps": [
+        { "name": "Google Drive",  "url": "https://dl.google.com/drive-file-stream/GoogleDriveSetup.exe",  "args": "/silent /install",  "winget": "Google.GoogleDrive",   "choco": "googledrive",  "scoop": null },
+        { "name": "Dropbox",       "url": "https://www.dropbox.com/download?plat=win&full=1",              "args": "/S",               "winget": "Dropbox.Dropbox",      "choco": "dropbox",      "scoop": null },
+        { "name": "OneDrive",      "url": null,                                                             "args": "/silent",          "winget": "Microsoft.OneDrive",   "choco": "onedrive",     "scoop": null }
+      ]
+    },
+    {
+      "name": "Developer Tools",
+      "apps": [
+        { "name": "Python 3.13",      "url": "https://www.python.org/ftp/python/3.13.3/python-3.13.3-amd64.exe",                                                  "args": "/quiet InstallAllUsers=1 PrependPath=1", "winget": "Python.Python.3.13",  "choco": "python",        "scoop": "python" },
+        { "name": "Git",              "url": "https://github.com/git-for-windows/git/releases/download/v2.54.0.windows.1/Git-2.54.0-64-bit.exe",                  "args": "/VERYSILENT /NORESTART",               "winget": "Git.Git",             "choco": "git",           "scoop": "git" },
+        { "name": "Notepad++",        "url": "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.9.4/npp.8.9.4.Installer.x64.exe",      "args": "/S",                                  "winget": "Notepad++.Notepad++", "choco": "notepadplusplus", "scoop": "notepadplusplus" },
+        { "name": "Visual Studio Code","url": "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64",                                            "args": "/VERYSILENT /NORESTART /MERGETASKS=!runcode", "winget": "Microsoft.VisualStudioCode", "choco": "vscode", "scoop": "vscode" },
+        { "name": "Dev-C++",          "url": "https://github.com/Embarcadero/Dev-Cpp/releases/latest/download/Embarcadero_Dev-Cpp_6.3_TDM-GCC_9.2_Setup.exe",   "args": "/VERYSILENT",                          "winget": "Embarcadero.Dev-Cpp", "choco": "dev-cpp",       "scoop": null }
+      ]
+    },
+    {
+      "name": ".NET Runtimes",
+      "apps": [
+        { "name": ".NET Framework 4.8.1",       "url": "https://go.microsoft.com/fwlink/?linkid=2203305",                              "args": "/q /norestart",        "winget": "Microsoft.DotNet.Framework.4.8.1",       "choco": "dotnet4.8.1",  "scoop": null },
+        { "name": ".NET Desktop Runtime 8",     "url": "https://aka.ms/dotnet/8.0/windowsdesktop-runtime-win-x64.exe",               "args": "/quiet /norestart",   "winget": "Microsoft.DotNet.DesktopRuntime.8",     "choco": "dotnet-8.0-runtime", "scoop": null },
+        { "name": ".NET Desktop Runtime 9",     "url": "https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe",               "args": "/quiet /norestart",   "winget": "Microsoft.DotNet.DesktopRuntime.9",     "choco": "dotnet-9.0-runtime", "scoop": null },
+        { "name": ".NET Desktop Runtime 10",    "url": "https://aka.ms/dotnet/10.0/windowsdesktop-runtime-win-x64.exe",              "args": "/quiet /norestart",   "winget": "Microsoft.DotNet.DesktopRuntime.10",    "choco": null,           "scoop": null }
+      ]
+    },
+    {
+      "name": "VC++ Redistributables",
+      "apps": [
+        { "name": "VC++ Redist 2015-2022 x64", "url": "https://aka.ms/vs/17/release/vc_redist.x64.exe", "args": "/quiet /norestart", "winget": "Microsoft.VCRedist.2015+.x64", "choco": "vcredist140", "scoop": null },
+        { "name": "VC++ Redist 2015-2022 x86", "url": "https://aka.ms/vs/17/release/vc_redist.x86.exe", "args": "/quiet /norestart", "winget": "Microsoft.VCRedist.2015+.x86", "choco": "vcredist140", "scoop": null }
+      ]
+    },
+    {
+      "name": "Imaging",
+      "apps": [
+        { "name": "FastStone Image Viewer", "url": "https://www.faststonesoft.net/DN/FSViewerSetup83.exe", "args": "/VERYSILENT", "winget": "FastStone.Viewer",          "choco": "faststone-image-viewer", "scoop": null },
+        { "name": "IrfanView",             "url": "https://pub-50d6cf4af6964541b0621bbc9bc26690.r2.dev/iview473_x64_setup.exe", "args": "/silent",     "winget": "IrfanSkiljan.IrfanView",   "choco": "irfanview",             "scoop": "irfanview" }
+      ]
+    },
+    {
+      "name": "Utilities",
+      "apps": [
+        { "name": "TeamViewer",  "url": "https://download.teamviewer.com/download/TeamViewer_Setup_x64.exe",          "args": "/S",                                        "winget": "TeamViewer.TeamViewer", "choco": "teamviewer",  "scoop": null },
+        { "name": "UltraViewer", "url": "https://www.ultraviewer.net/media/UltraViewer_setup_6.6_vi.exe",             "args": "/VERYSILENT",                               "winget": null,                    "choco": null,          "scoop": null },
+        { "name": "AnyDesk",    "url": "https://download.anydesk.com/AnyDesk.exe",                                   "args": "--install --start-with-win --silent",        "winget": "AnyDesk.AnyDesk",      "choco": "anydesk",     "scoop": null },
+        { "name": "CCleaner",   "url": "https://download.ccleaner.com/ccsetup.exe",                                  "args": "/S",                                        "winget": "Piriform.CCleaner",    "choco": "ccleaner",    "scoop": null }
+      ]
+    }
+  ]
+}
