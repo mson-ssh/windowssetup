@@ -4,13 +4,21 @@ Công cụ cài đặt và tối ưu Windows tự động với giao diện WPF.
 
 ## Cài đặt nhanh
 
-Chạy lệnh sau trong PowerShell **với quyền Administrator**:
+### Cách 1: Quick Launch (Nhanh nhất - Khuyên dùng)
+
+```powershell
+& ([scriptblock]::Create((irm "https://raw.githubusercontent.com/mson-ssh/windowssetup/main/quick.ps1")))
+```
+
+> ⚡ **Siêu nhanh:** Load trực tiếp từ GitHub vào RAM, không cần tải ZIP hay giải nén.
+
+### Cách 2: ZIP Installer (Ổn định hơn)
 
 ```powershell
 irm https://raw.githubusercontent.com/mson-ssh/windowssetup/main/install.ps1 | iex
 ```
 
-> **Lưu ý:** Script sẽ tự động tải toàn bộ project từ GitHub, giải nén và chạy GUI.
+> 📦 **Ổn định:** Tải toàn bộ project dưới dạng ZIP, giải nén và chạy local.
 
 ## Tính năng
 
