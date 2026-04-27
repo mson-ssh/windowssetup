@@ -165,6 +165,12 @@ if (-not $scriptDir) {
                 </Grid>
             </TabItem>
 
+            <TabItem Header="Specifications">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="panelSpecs" Margin="16"/>
+                </ScrollViewer>
+            </TabItem>
+
         </TabControl>
 
         <ProgressBar Grid.Row="1" x:Name="progressBar"
@@ -201,6 +207,7 @@ $window = [Windows.Markup.XamlReader]::Load($reader)
 
 $panelApps    = $window.FindName('panelApps')
 $panelOpt     = $window.FindName('panelOptimize')
+$panelSpecs   = $window.FindName('panelSpecs')
 $lblActStatus = $window.FindName('lblActStatus')
 $rbHWID       = $window.FindName('rbHWID')
 $rbKMS38      = $window.FindName('rbKMS38')
@@ -391,6 +398,216 @@ $btnLog.Add_Click({
         [System.Windows.MessageBox]::Show('No log file found.', 'MiniApp') | Out-Null
     }
 })
+
+# =====================================================================
+# TAB 4: SPECIFICATIONS - Hardware Information
+# =====================================================================
+
+# Helper function to add spec item
+function Add-SpecItem($label, $value, $color = '#1A1A1A') {
+    $sp = New-Object System.Windows.Controls.StackPanel
+    $sp.Orientation = 'Horizontal'
+    $sp.Margin = [System.Windows.Thickness]::new(0, 2, 0, 2)
+    
+    $lbl = New-Object System.Windows.Controls.TextBlock
+    $lbl.Text = "$label"
+    $lbl.FontWeight = 'SemiBold'
+    $lbl.Width = 180
+    $lbl.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#666666')
+    
+    $val = New-Object System.Windows.Controls.TextBlock
+    $val.Text = $value
+    $val.TextWrapping = 'Wrap'
+    $val.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString($color)
+    
+    $sp.Children.Add($lbl) | Out-Null
+    $sp.Children.Add($val) | Out-Null
+    
+    return $sp
+}
+
+# 1. GENERAL INFORMATION
+$panelSpecs.Children.Add((New-GroupHeader 'General Information')) | Out-Null
+
+try {
+    $cs = Get-CimInstance Win32_ComputerSystem
+    $bios = Get-CimInstance Win32_BIOS
+    
+    $panelSpecs.Children.Add((Add-SpecItem 'Model:' "$($cs.Manufacturer) $($cs.Model)")) | Out-Null
+    $panelSpecs.Children.Add((Add-SpecItem 'Serial Number:' $bios.SerialNumber)) | Out-Null
+} catch {
+    $panelSpecs.Children.Add((Add-SpecItem 'Model:' 'Unable to retrieve')) | Out-Null
+}
+
+# 2. OPERATING SYSTEM
+$panelSpecs.Children.Add((New-GroupHeader 'Operating System')) | Out-Null
+
+try {
+    $os = Get-CimInstance Win32_OperatingSystem
+    $osName = $os.Caption -replace 'Microsoft ', ''
+    
+    $panelSpecs.Children.Add((Add-SpecItem 'OS:' $osName)) | Out-Null
+    
+    # Activation status with auto-refresh
+    $actStatusLabel = New-Object System.Windows.Controls.TextBlock
+    $actStatusLabel.Text = 'Activation Status:'
+    $actStatusLabel.FontWeight = 'SemiBold'
+    $actStatusLabel.Width = 180
+    $actStatusLabel.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#666666')
+    
+    $actStatusValue = New-Object System.Windows.Controls.TextBlock
+    $actStatusValue.Name = 'txtActStatus'
+    
+    $sp = New-Object System.Windows.Controls.StackPanel
+    $sp.Orientation = 'Horizontal'
+    $sp.Margin = [System.Windows.Thickness]::new(0, 2, 0, 2)
+    $sp.Children.Add($actStatusLabel) | Out-Null
+    $sp.Children.Add($actStatusValue) | Out-Null
+    $panelSpecs.Children.Add($sp) | Out-Null
+    
+    # Function to update activation status
+    $updateActStatus = {
+        try {
+            $lic = Get-CimInstance SoftwareLicensingProduct | Where-Object { $_.PartialProductKey -and $_.LicenseStatus -eq 1 }
+            if ($lic) {
+                $actStatusValue.Text = 'Activated'
+                $actStatusValue.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#107C10')
+            } else {
+                $actStatusValue.Text = 'Not Activated'
+                $actStatusValue.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#D83B01')
+            }
+        } catch {
+            $actStatusValue.Text = 'Unknown'
+            $actStatusValue.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#666666')
+        }
+    }
+    
+    & $updateActStatus
+    
+    $timer = New-Object System.Windows.Threading.DispatcherTimer
+    $timer.Interval = [TimeSpan]::FromSeconds(5)
+    $timer.Add_Tick($updateActStatus)
+    $timer.Start()
+    
+} catch {
+    $panelSpecs.Children.Add((Add-SpecItem 'OS:' 'Unable to retrieve')) | Out-Null
+}
+
+# 3. CPU
+$panelSpecs.Children.Add((New-GroupHeader 'Processor')) | Out-Null
+
+try {
+    $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
+    $cpuInfo = "$($cpu.Name) ($($cpu.NumberOfCores) cores, $($cpu.NumberOfLogicalProcessors) threads)"
+    $panelSpecs.Children.Add((Add-SpecItem 'CPU:' $cpuInfo)) | Out-Null
+} catch {
+    $panelSpecs.Children.Add((Add-SpecItem 'CPU:' 'Unable to retrieve')) | Out-Null
+}
+
+# 4. STORAGE
+$panelSpecs.Children.Add((New-GroupHeader 'Storage')) | Out-Null
+
+try {
+    $disks = Get-CimInstance Win32_DiskDrive
+    foreach ($disk in $disks) {
+        $sizeGB = [math]::Round($disk.Size / 1GB, 2)
+        $diskInfo = "$($disk.Model) ($sizeGB GB)"
+        $panelSpecs.Children.Add((Add-SpecItem "Disk $($disk.Index):" $diskInfo)) | Out-Null
+        
+        $partitions = Get-CimInstance Win32_DiskPartition | Where-Object { $_.DiskIndex -eq $disk.Index }
+        foreach ($part in $partitions) {
+            $partSizeGB = [math]::Round($part.Size / 1GB, 2)
+            $logicalDisks = Get-CimInstance Win32_LogicalDiskToDiskPartition | Where-Object { $_.Antecedent.DeviceID -eq $part.DeviceID }
+            foreach ($ld in $logicalDisks) {
+                $drive = Get-CimInstance Win32_LogicalDisk | Where-Object { $_.DeviceID -eq $ld.Dependent.DeviceID }
+                if ($drive) {
+                    $freeGB = [math]::Round($drive.FreeSpace / 1GB, 2)
+                    $partInfo = "  └─ $($drive.DeviceID) ($partSizeGB GB, $freeGB GB free)"
+                    $panelSpecs.Children.Add((Add-SpecItem '' $partInfo)) | Out-Null
+                }
+            }
+        }
+    }
+} catch {
+    $panelSpecs.Children.Add((Add-SpecItem 'Storage:' 'Unable to retrieve')) | Out-Null
+}
+
+# 5. RAM
+$panelSpecs.Children.Add((New-GroupHeader 'Memory')) | Out-Null
+
+try {
+    $ram = Get-CimInstance Win32_PhysicalMemory
+    $totalRAM = [math]::Round(($ram | Measure-Object Capacity -Sum).Sum / 1GB, 2)
+    
+    $ramType = switch ($ram[0].SMBIOSMemoryType) {
+        20 { 'DDR' }
+        21 { 'DDR2' }
+        24 { 'DDR3' }
+        26 { 'DDR4' }
+        34 { 'DDR5' }
+        default { 'Unknown' }
+    }
+    
+    $ramSpeed = $ram[0].Speed
+    
+    $ramInfo = "$totalRAM GB $ramType @ $ramSpeed MHz"
+    $panelSpecs.Children.Add((Add-SpecItem 'Total RAM:' $ramInfo)) | Out-Null
+} catch {
+    $panelSpecs.Children.Add((Add-SpecItem 'RAM:' 'Unable to retrieve')) | Out-Null
+}
+
+# 6. GRAPHICS
+$panelSpecs.Children.Add((New-GroupHeader 'Graphics')) | Out-Null
+
+try {
+    $gpus = Get-CimInstance Win32_VideoController
+    $gpuIndex = 0
+    foreach ($gpu in $gpus) {
+        $gpuIndex++
+        $gpuName = if ($gpu.Name -match 'Intel|AMD.*Radeon.*Vega|AMD.*Ryzen') { 
+            "$($gpu.Name) (Integrated)" 
+        } else { 
+            "$($gpu.Name) (Discrete)" 
+        }
+        $panelSpecs.Children.Add((Add-SpecItem "GPU $gpuIndex`:" $gpuName)) | Out-Null
+    }
+    
+    Add-Type -AssemblyName System.Windows.Forms
+    $screens = [System.Windows.Forms.Screen]::AllScreens
+    $monIndex = 0
+    foreach ($screen in $screens) {
+        $monIndex++
+        $isPrimary = if ($screen.Primary) { ' (Primary)' } else { '' }
+        $refreshRate = 60
+        $monInfo = "$($screen.Bounds.Width)x$($screen.Bounds.Height) @ ${refreshRate}Hz$isPrimary"
+        $panelSpecs.Children.Add((Add-SpecItem "Monitor $monIndex`:" $monInfo)) | Out-Null
+    }
+} catch {
+    $panelSpecs.Children.Add((Add-SpecItem 'Graphics:' 'Unable to retrieve')) | Out-Null
+}
+
+# 7. NETWORK
+$panelSpecs.Children.Add((New-GroupHeader 'Network Controllers')) | Out-Null
+
+try {
+    $adapters = Get-NetAdapter | Where-Object { $_.Status -ne 'Disabled' }
+    
+    foreach ($adapter in $adapters) {
+        $adapterType = if ($adapter.Name -match 'Wi-Fi|Wireless') { 'WiFi' } else { 'Ethernet' }
+        $status = if ($adapter.Status -eq 'Up') { 'Connected' } else { 'Disconnected' }
+        $statusColor = if ($adapter.Status -eq 'Up') { '#107C10' } else { '#D83B01' }
+        
+        $speed = if ($adapter.LinkSpeed) { 
+            $speedGbps = [math]::Round([double]($adapter.LinkSpeed -replace ' Gbps| Mbps') / 1000, 2)
+            if ($speedGbps -ge 1) { "$speedGbps Gbps" } else { "$($adapter.LinkSpeed)" }
+        } else { 'N/A' }
+        
+        $adapterInfo = "$($adapter.InterfaceDescription) | $speed | $status"
+        $panelSpecs.Children.Add((Add-SpecItem "$adapterType`:" $adapterInfo $statusColor)) | Out-Null
+    }
+} catch {
+    $panelSpecs.Children.Add((Add-SpecItem 'Network:' 'Unable to retrieve')) | Out-Null
+}
 
 # =====================================================================
 # RUN WPF
