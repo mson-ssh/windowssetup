@@ -1,21 +1,21 @@
-# main.ps1 - GUI WPF cho WinSetup Pro
+# main.ps1 - WPF GUI for WinSetup Pro
 
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
 Add-Type -AssemblyName WindowsBase
 
-# --- Duong dan config ---
+# --- Config path ---
 $scriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path -ErrorAction SilentlyContinue
 if (-not $scriptDir) {
-    # Khi chay qua irm | iex, dung duong dan tam
+    # When running via irm | iex, use temp directory
     $scriptDir = $env:TEMP
     $configPath = Join-Path $scriptDir 'winsetup-config.json'
-    # Tai apps.json tu GitHub
+    # Download apps.json from GitHub
     $configUrl = 'https://raw.githubusercontent.com/mson-ssh/windowssetup/main/config/apps.json'
     try {
         Invoke-RestMethod $configUrl | Set-Content $configPath -Encoding UTF8
     } catch {
-        Write-Host "[!] Khong the tai config tu GitHub: $_" -ForegroundColor Red
+        Write-Host "[!] Cannot download config from GitHub: $_" -ForegroundColor Red
         exit 1
     }
 } else {
@@ -120,7 +120,7 @@ if (-not $scriptDir) {
 
         <TabControl Grid.Row="0" Background="#FFFFFF" BorderThickness="1" BorderBrush="#DDDDDD" x:Name="tabMain">
 
-            <TabItem Header="&#x1F4E6;  C&#xE0;i ph&#x1EA7;n m&#x1EC1;m">
+            <TabItem Header="📦  Install Apps">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
@@ -130,27 +130,27 @@ if (-not $scriptDir) {
                         <StackPanel x:Name="panelApps" Margin="0,4,0,4"/>
                     </ScrollViewer>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,0">
-                        <Button x:Name="btnSelectAll" Content="Ch&#x1ECD;n t&#x1EA5;t c&#x1EA3;" Width="110" Margin="0,0,8,0" Background="#0078D4"/>
-                        <Button x:Name="btnDeselectAll" Content="B&#x1EE3; ch&#x1ECD;n" Width="90" Background="#6C757D"/>
+                        <Button x:Name="btnSelectAll" Content="Select All" Width="100" Margin="0,0,8,0" Background="#0078D4"/>
+                        <Button x:Name="btnDeselectAll" Content="Deselect" Width="90" Background="#6C757D"/>
                     </StackPanel>
                 </Grid>
             </TabItem>
 
-            <TabItem Header="&#x1F511;  K&#xED;ch ho&#x1EA1;t">
+            <TabItem Header="🔑  Activation">
                 <StackPanel Margin="20,16,20,16">
                     <TextBlock x:Name="lblActStatus" FontSize="14" Margin="0,0,0,20"
-                               Foreground="#444444" Text="&#x110;ang ki&#x1EC3;m tra tr&#x1EA1;ng th&#xE1;i..."/>
-                    <TextBlock Text="Ch&#x1ECD;n ph&#x01B0;&#x01A1;ng ph&#xE1;p:" Foreground="#666666" FontSize="12" Margin="0,0,0,8"/>
-                    <RadioButton x:Name="rbHWID"   Content="HWID  &#x2014;  V&#x129;nh vi&#x1EC5;n, g&#x1EAF;n v&#x1EDB;i ph&#x1EA7;n c&#x1EE9;ng (Windows 10/11)" IsChecked="True"/>
-                    <RadioButton x:Name="rbKMS38"  Content="KMS38  &#x2014;  &#x110;&#x1EBF;n n&#x103;m 2038, t&#x1EF1; gia h&#x1EA1;n"/>
-                    <RadioButton x:Name="rbOhook"  Content="Ohook  &#x2014;  Microsoft 365, offline"/>
-                    <Button x:Name="btnActivate" Content="K&#xED;ch ho&#x1EA1;t ngay"
-                            Width="160" HorizontalAlignment="Left" Margin="0,20,0,0"
+                               Foreground="#444444" Text="Checking status..."/>
+                    <TextBlock Text="Select method:" Foreground="#666666" FontSize="12" Margin="0,0,0,8"/>
+                    <RadioButton x:Name="rbHWID"   Content="HWID  —  Permanent, hardware-based (Windows 10/11)" IsChecked="True"/>
+                    <RadioButton x:Name="rbKMS38"  Content="KMS38  —  Until 2038, auto-renew"/>
+                    <RadioButton x:Name="rbOhook"  Content="Ohook  —  Microsoft 365, offline"/>
+                    <Button x:Name="btnActivate" Content="Activate Now"
+                            Width="140" HorizontalAlignment="Left" Margin="0,20,0,0"
                             Background="#0078D4" Foreground="White"/>
                 </StackPanel>
             </TabItem>
 
-            <TabItem Header="&#x26A1;  T&#x1ED1;i &#x01B0;u">
+            <TabItem Header="⚡  Optimize">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
@@ -158,9 +158,9 @@ if (-not $scriptDir) {
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0" x:Name="panelOptimize" Margin="8,8,8,8"/>
                     <Button Grid.Row="1" x:Name="btnDryRun"
-                            Content="Dry Run (Test &#x2014; kh&#xF4;ng thay &#x111;&#x1ED5;i h&#x1EC7; th&#x1ED1;ng)"
+                            Content="Dry Run (Test — no system changes)"
                             HorizontalAlignment="Left" Margin="8,8,0,0"
-                            Background="#6C757D" Width="280"/>
+                            Background="#6C757D" Width="260"/>
                 </Grid>
             </TabItem>
 
@@ -178,13 +178,13 @@ if (-not $scriptDir) {
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" x:Name="lblStatus"
-                       Text="S&#x1EB5;n s&#xE0;ng." Foreground="#666666"
+                       Text="Ready." Foreground="#666666"
                        FontSize="12" VerticalAlignment="Center"/>
             <Button Grid.Column="1" x:Name="btnLog"
-                    Content="Xem Log" Width="80" Margin="8,0,8,0"
+                    Content="View Log" Width="80" Margin="8,0,8,0"
                     Background="#6C757D"/>
             <Button Grid.Column="2" x:Name="btnRun"
-                    Content="Ch&#x1EA1;y t&#x1EA5;t c&#x1EA3;" Width="100"
+                    Content="Run All" Width="90"
                     Background="#107C10" Foreground="White"
                     FontWeight="SemiBold"/>
         </Grid>
@@ -214,7 +214,7 @@ $btnRun       = $window.FindName('btnRun')
 $btnLog       = $window.FindName('btnLog')
 
 # =====================================================================
-# HELPER: tao tieu de nhom
+# HELPER: create group header
 # =====================================================================
 function New-GroupHeader([string]$text) {
     $tb = New-Object System.Windows.Controls.TextBlock
@@ -227,7 +227,7 @@ function New-GroupHeader([string]$text) {
 }
 
 # =====================================================================
-# TAB 1: Load app tu apps.json
+# TAB 1: Load apps from apps.json
 # =====================================================================
 $appCheckboxes = @{}
 if (Test-Path $configPath) {
@@ -256,45 +256,45 @@ $btnSelectAll.Add_Click({ foreach ($cb in $appCheckboxes.Values) { $cb.IsChecked
 $btnDeselect.Add_Click({  foreach ($cb in $appCheckboxes.Values) { $cb.IsChecked = $false } })
 
 # =====================================================================
-# TAB 2: Trang thai kich hoat
+# TAB 2: Activation status
 # =====================================================================
 try {
     $actStatus = Get-ActivationStatus
-    $lblActStatus.Text       = "Trang thai: $actStatus"
-    $lblActStatus.Foreground = if ($actStatus -eq 'Da kich hoat') {
+    $lblActStatus.Text       = "Status: $actStatus"
+    $lblActStatus.Foreground = if ($actStatus -eq 'Activated') {
         [System.Windows.Media.BrushConverter]::new().ConvertFromString('#107C10')
     } else {
         [System.Windows.Media.BrushConverter]::new().ConvertFromString('#D83B01')
     }
 } catch {
-    $lblActStatus.Text = 'Trang thai: Khong xac dinh'
+    $lblActStatus.Text = 'Status: Unknown'
 }
 
 $btnActivate.Add_Click({
     $method = if ($rbHWID.IsChecked) { 'HWID' } elseif ($rbKMS38.IsChecked) { 'KMS38' } else { 'Ohook' }
     $r = [System.Windows.MessageBox]::Show(
-        "Xac nhan kich hoat bang $method?", 'WinSetup Pro',
+        "Confirm activation with $method?", 'MiniApp',
         [System.Windows.MessageBoxButton]::YesNo,
         [System.Windows.MessageBoxImage]::Question)
     if ($r -eq 'Yes') {
-        $lblStatus.Text = "Dang kich hoat ($method)..."
+        $lblStatus.Text = "Activating ($method)..."
         Invoke-Activation -Method $method
-        $lblStatus.Text = 'Kich hoat hoan tat!'
+        $lblStatus.Text = 'Activation complete!'
     }
 })
 
 # =====================================================================
-# TAB 3: Toi uu he thong
+# TAB 3: System optimization
 # =====================================================================
 $optimizeTasks = @(
-    @{ Name='Tat Telemetry';         Func='Disable-Telemetry';    Safe=$true  }
-    @{ Name='Tat Cortana';           Func='Disable-Cortana';      Safe=$true  }
-    @{ Name='High Performance Plan'; Func='Set-PowerPlan';        Safe=$true  }
-    @{ Name='Xoa file tam';          Func='Clear-TempFiles';      Safe=$true  }
-    @{ Name='Bat Dark Mode';         Func='Enable-DarkMode';      Safe=$true  }
-    @{ Name='Cai dat Explorer';      Func='Set-ExplorerSettings'; Safe=$true  }
-    @{ Name='Go bo Bloatware';       Func='Disable-Bloatware';    Safe=$false }
-    @{ Name='Tat Startup Apps';      Func='Disable-StartupApps';  Safe=$false }
+    @{ Name='Disable Telemetry';      Func='Disable-Telemetry';    Safe=$true  }
+    @{ Name='Disable Cortana';        Func='Disable-Cortana';      Safe=$true  }
+    @{ Name='High Performance Plan';  Func='Set-PowerPlan';        Safe=$true  }
+    @{ Name='Clear Temp Files';       Func='Clear-TempFiles';      Safe=$true  }
+    @{ Name='Enable Dark Mode';       Func='Enable-DarkMode';      Safe=$true  }
+    @{ Name='Explorer Settings';      Func='Set-ExplorerSettings'; Safe=$true  }
+    @{ Name='Remove Bloatware';       Func='Disable-Bloatware';    Safe=$false }
+    @{ Name='Disable Startup Apps';   Func='Disable-StartupApps';  Safe=$false }
 )
 
 $optCheckboxes = @{}
@@ -311,15 +311,15 @@ foreach ($task in $optimizeTasks) {
 }
 
 $btnDryRun.Add_Click({
-    $lblStatus.Text = 'Dang chay Dry Run...'
+    $lblStatus.Text = 'Running Dry Run...'
     foreach ($task in $optimizeTasks) {
         if ($optCheckboxes[$task.Func].IsChecked) { & $task.Func -DryRun }
     }
-    $lblStatus.Text = 'Dry Run hoan tat. Xem log de kiem tra.'
+    $lblStatus.Text = 'Dry Run complete. Check log for details.'
 })
 
 # =====================================================================
-# NUT CHAY TAT CA
+# RUN ALL BUTTON
 # =====================================================================
 $btnRun.Add_Click({
     $selectedApps = @()
@@ -330,7 +330,7 @@ $btnRun.Add_Click({
     $total = $selectedApps.Count + $selectedOpts.Count
 
     if ($total -eq 0) {
-        [System.Windows.MessageBox]::Show('Chua chon gi ca!', 'WinSetup Pro') | Out-Null
+        [System.Windows.MessageBox]::Show('Nothing selected!', 'MiniApp') | Out-Null
         return
     }
 
@@ -339,38 +339,38 @@ $btnRun.Add_Click({
     $done = 0
 
     if ($selectedApps.Count -gt 0) {
-        $lblStatus.Text = 'Dang cai phan mem...'
+        $lblStatus.Text = 'Installing apps...'
         Install-Apps -Apps $selectedApps
         $done += $selectedApps.Count
         $progressBar.Value = $done
     }
 
     foreach ($task in $selectedOpts) {
-        $lblStatus.Text = "Dang chay: $($task.Name)..."
+        $lblStatus.Text = "Running: $($task.Name)..."
         & $task.Func
         $done++
         $progressBar.Value = $done
         $window.Dispatcher.Invoke([action]{}, 'Background')
     }
 
-    $lblStatus.Text = 'Hoan tat!'
-    [System.Windows.MessageBox]::Show('Da hoan thanh tat ca tac vu!', 'WinSetup Pro',
+    $lblStatus.Text = 'Complete!'
+    [System.Windows.MessageBox]::Show('All tasks completed!', 'MiniApp',
         [System.Windows.MessageBoxButton]::OK,
         [System.Windows.MessageBoxImage]::Information) | Out-Null
 })
 
 # =====================================================================
-# NUT XEM LOG
+# VIEW LOG BUTTON
 # =====================================================================
 $btnLog.Add_Click({
     if (Test-Path $logPath) {
         Start-Process notepad $logPath
     } else {
-        [System.Windows.MessageBox]::Show('Chua co file log.', 'WinSetup Pro') | Out-Null
+        [System.Windows.MessageBox]::Show('No log file found.', 'MiniApp') | Out-Null
     }
 })
 
 # =====================================================================
-# CHAY WPF
+# RUN WPF
 # =====================================================================
 $window.ShowDialog() | Out-Null
