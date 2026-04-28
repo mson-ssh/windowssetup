@@ -26,52 +26,72 @@ function Get-AppList {
     return $json.groups
 }
 
-# --- Install via URL ---
-function Install-ViaUrl {
+# --- Download URL app (returns temp path or $null) ---
+function Get-UrlAppDownload {
     param($App)
-    $url  = $App.url
-    $args = $App.args
-    $type = $App.type
-
-    # Get filename from URL
+    
+    $url = $App.url
+    if (-not $url) { return $null }
+    
     $fileName = [System.IO.Path]::GetFileName(([uri]$url).LocalPath)
     if (-not $fileName -or $fileName -eq '') { $fileName = $App.name -replace '[^a-zA-Z0-9]','_' }
     $tmpPath = Join-Path $env:TEMP $fileName
-
+    
     Write-Log "Downloading: $($App.name) <- $url"
     try {
+        $ProgressPreference = 'SilentlyContinue'
         Invoke-WebRequest -Uri $url -OutFile $tmpPath -UseBasicParsing
+        Write-Log "Downloaded: $($App.name)" 'OK'
+        return $tmpPath
     } catch {
         Write-Log "Download error: $_" 'ERROR'
+        return $null
+    }
+}
+
+# --- Install URL app (after download) ---
+function Install-UrlApp {
+    param($App, $TmpPath)
+    
+    if (-not $TmpPath -or -not (Test-Path $TmpPath)) {
+        Write-Log "Downloaded file not found for $($App.name)" 'ERROR'
         return $false
     }
-
-    # Handle ZIP (e.g. EV Key)
+    
+    $args = $App.args
+    $type = $App.type
+    
+    # Handle ZIP
     if ($type -eq 'zip') {
         $destDir = Join-Path $env:LOCALAPPDATA "Programs\$($App.name -replace '[^a-zA-Z0-9]','_')"
-        Write-Log "Extracting ZIP: $tmpPath -> $destDir"
-        Expand-Archive -Path $tmpPath -DestinationPath $destDir -Force
-        Remove-Item $tmpPath -Force
-        Write-Log "Installed (ZIP): $($App.name)" 'OK'
-        return $true
+        Write-Log "Extracting ZIP: $TmpPath -> $destDir"
+        try {
+            Expand-Archive -Path $TmpPath -DestinationPath $destDir -Force
+            Remove-Item $TmpPath -Force
+            Write-Log "Installed (ZIP): $($App.name)" 'OK'
+            return $true
+        } catch {
+            Write-Log "ZIP extraction error: $_" 'ERROR'
+            return $false
+        }
     }
-
+    
     # Run installer
     Write-Log "Installing: $($App.name) (args: '$args')"
     try {
         if ($args -and $args.Trim() -ne '') {
-            Start-Process $tmpPath -ArgumentList $args -Wait -NoNewWindow
+            $proc = Start-Process $TmpPath -ArgumentList $args -Wait -NoNewWindow -PassThru
         } else {
-            Start-Process $tmpPath -Wait
+            $proc = Start-Process $TmpPath -Wait -PassThru
         }
-        Write-Log "Installed (URL): $($App.name)" 'OK'
+        Write-Log "Installed (URL): $($App.name) (Exit code: $($proc.ExitCode))" 'OK'
     } catch {
         Write-Log "Installer error: $_" 'ERROR'
-        Remove-Item $tmpPath -Force -ErrorAction SilentlyContinue
         return $false
+    } finally {
+        Remove-Item $TmpPath -Force -ErrorAction SilentlyContinue
     }
-
-    Remove-Item $tmpPath -Force -ErrorAction SilentlyContinue
+    
     return $true
 }
 
@@ -101,41 +121,157 @@ function Install-ViaPackageManager {
     }
 }
 
-# --- Main function: install list of apps ---
+# --- Main function: install list of apps (parallel) ---
 function Install-Apps {
     param([array]$Apps)
+    
     $pm = Get-PackageManager
     Write-Log "Package manager: $pm"
-
+    Write-Log "Starting parallel installation of $($Apps.Count) apps..."
+    
+    # Phase 1: Download all URL apps in parallel
+    $urlApps = $Apps | Where-Object { $_.url }
+    $downloadedPaths = @{}
+    
+    if ($urlApps.Count -gt 0) {
+        Write-Log "Phase 1: Downloading $($urlApps.Count) URL apps in parallel..."
+        
+        $downloadJobs = @()
+        foreach ($app in $urlApps) {
+            $job = Start-Job -ScriptBlock {
+                param($App)
+                
+                $url = $App.url
+                $fileName = [System.IO.Path]::GetFileName(([uri]$url).LocalPath)
+                if (-not $fileName -or $fileName -eq '') { $fileName = $App.name -replace '[^a-zA-Z0-9]','_' }
+                $tmpPath = Join-Path $env:TEMP $fileName
+                
+                try {
+                    $ProgressPreference = 'SilentlyContinue'
+                    Invoke-WebRequest -Uri $url -OutFile $tmpPath -UseBasicParsing
+                    return @{ Success = $true; Path = $tmpPath; AppName = $App.name }
+                } catch {
+                    return @{ Success = $false; AppName = $App.name; Error = $_ }
+                }
+            } -ArgumentList $app
+            $downloadJobs += $job
+        }
+        
+        # Wait for all downloads
+        foreach ($job in $downloadJobs) {
+            $result = $job | Wait-Job | Receive-Job
+            if ($result.Success) {
+                $downloadedPaths[$result.AppName] = $result.Path
+                Write-Log "Downloaded: $($result.AppName) -> $($result.Path)" 'OK'
+            } else {
+                Write-Log "Download failed: $($result.AppName) - $($result.Error)" 'ERROR'
+            }
+        }
+        $downloadJobs | Remove-Job
+        Write-Log "Phase 1 complete: All downloads finished"
+    }
+    
+    # Phase 2: Install all apps in parallel
+    Write-Log "Phase 2: Installing all apps in parallel..."
+    
+    $installJobs = @()
     foreach ($app in $Apps) {
-        Write-Log "--- Installing: $($app.name) ---"
-        $ok = $false
-
-        # Priority 1: URL
-        if ($app.url) {
-            $ok = Install-ViaUrl -App $app
-        }
-
-        # Priority 2: winget
-        if (-not $ok -and $app.winget) {
-            Write-Log "Fallback winget: $($app.name)"
-            $ok = Install-ViaPackageManager -App $app -PM 'winget'
-        }
-
-        # Priority 3: choco
-        if (-not $ok -and $app.choco) {
-            Write-Log "Fallback choco: $($app.name)"
-            $ok = Install-ViaPackageManager -App $app -PM 'choco'
-        }
-
-        # Priority 4: scoop
-        if (-not $ok -and $app.scoop) {
-            Write-Log "Fallback scoop: $($app.name)"
-            $ok = Install-ViaPackageManager -App $app -PM 'scoop'
-        }
-
-        if (-not $ok) {
-            Write-Log "FAILED: Cannot install $($app.name)" 'ERROR'
+        $job = Start-Job -ScriptBlock {
+            param($App, $PM, $TmpPath)
+            
+            # Helper for logging inside job
+            function Log {
+                param($Message)
+                Write-Output "[$(Get-Date -Format 'HH:mm:ss')] $Message"
+            }
+            
+            $type = $App.type
+            
+            # URL app
+            if ($App.url) {
+                if (-not $TmpPath -or -not (Test-Path $TmpPath)) {
+                    Log "ERROR: Downloaded file not found for $($App.name)"
+                    return @{ Success = $false; AppName = $App.name; Error = "Downloaded file not found" }
+                }
+                
+                # Handle ZIP
+                if ($type -eq 'zip') {
+                    $destDir = Join-Path $env:LOCALAPPDATA "Programs\$($App.name -replace '[^a-zA-Z0-9]','_')"
+                    try {
+                        Expand-Archive -Path $TmpPath -DestinationPath $destDir -Force
+                        Remove-Item $TmpPath -Force
+                        Log "OK: Installed (ZIP): $($App.name)"
+                        return @{ Success = $true; AppName = $App.name; Method = 'URL-ZIP' }
+                    } catch {
+                        Log "ERROR: ZIP extraction failed for $($App.name): $_"
+                        return @{ Success = $false; AppName = $App.name; Method = 'URL-ZIP'; Error = $_ }
+                    }
+                }
+                
+                # Run installer
+                $args = $App.args
+                try {
+                    if ($args -and $args.Trim() -ne '') {
+                        $proc = Start-Process $TmpPath -ArgumentList $args -Wait -NoNewWindow -PassThru
+                    } else {
+                        $proc = Start-Process $TmpPath -Wait -PassThru
+                    }
+                    Remove-Item $TmpPath -Force -ErrorAction SilentlyContinue
+                    Log "OK: Installed (URL): $($App.name) (Exit code: $($proc.ExitCode))"
+                    return @{ Success = $true; AppName = $App.name; Method = 'URL' }
+                } catch {
+                    Remove-Item $TmpPath -Force -ErrorAction SilentlyContinue
+                    Log "ERROR: Installer failed for $($App.name): $_"
+                    return @{ Success = $false; AppName = $App.name; Method = 'URL'; Error = $_ }
+                }
+            }
+            
+            # Package manager app
+            try {
+                switch ($PM) {
+                    'winget' {
+                        if ($App.winget) {
+                            winget install $App.winget --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Null
+                            Log "OK: Installed (winget): $($App.name)"
+                            return @{ Success = $true; AppName = $App.name; Method = 'winget' }
+                        }
+                    }
+                    'choco' {
+                        if ($App.choco) {
+                            choco install $App.choco -y 2>&1 | Out-Null
+                            Log "OK: Installed (choco): $($App.name)"
+                            return @{ Success = $true; AppName = $App.name; Method = 'choco' }
+                        }
+                    }
+                    'scoop' {
+                        if ($App.scoop) {
+                            scoop install $App.scoop 2>&1 | Out-Null
+                            Log "OK: Installed (scoop): $($App.name)"
+                            return @{ Success = $true; AppName = $App.name; Method = 'scoop' }
+                        }
+                    }
+                }
+                Log "ERROR: No valid package manager ID for $($App.name)"
+                return @{ Success = $false; AppName = $App.name; Method = $PM; Error = "No valid package manager ID" }
+            } catch {
+                Log "ERROR: Install failed for $($App.name): $_"
+                return @{ Success = $false; AppName = $App.name; Method = $PM; Error = $_ }
+            }
+        } -ArgumentList $app, $pm, $downloadedPaths[$app.name]
+        
+        $installJobs += $job
+    }
+    
+    # Wait for all installs and collect results
+    foreach ($job in $installJobs) {
+        $result = $job | Wait-Job | Receive-Job
+        if ($result.Success) {
+            Write-Log "Installed ($($result.Method)): $($result.AppName)" 'OK'
+        } else {
+            Write-Log "FAILED ($($result.Method)): $($result.AppName) - $($result.Error)" 'ERROR'
         }
     }
+    $installJobs | Remove-Job
+    
+    Write-Log "Phase 2 complete: All installations finished"
 }
