@@ -1,8 +1,3 @@
-
-Add-Type -AssemblyName PresentationFramework
-Add-Type -AssemblyName PresentationCore
-Add-Type -AssemblyName WindowsBase
-
 # --- Config path ---
 $scriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path -ErrorAction SilentlyContinue
 if (-not $scriptDir) {
@@ -438,53 +433,12 @@ $btnRun.Add_Click({
         }
 
         3 {
-            [System.Windows.MessageBox]::Show('Specifications tab has no runnable tasks.', 'WinSetup Pro') | Out-Null
-            $lblStatus.Text = 'Specifications tab is view-only.'
-        }
-
-        default {
-            [System.Windows.MessageBox]::Show('Unsupported tab.', 'WinSetup Pro') | Out-Null
+            [System.Windows.MessageBox]::Show('Specifications tab has no runnable tasks.', 'WinSetup Pro')
         }
     }
 })
 
-# =====================================================================
-# VIEW LOG BUTTON
-# =====================================================================
-$btnLog.Add_Click({
-    $lblStatus.Text = 'AutoRUN is reserved for upcoming automation flow.'
-    [System.Windows.MessageBox]::Show('AutoRUN will be implemented for automatic setup flow.', 'WinSetup Pro') | Out-Null
-})
-
-# =====================================================================
-# TAB 4: SPECIFICATIONS - Hardware Information  
-# =====================================================================
-
-# Helper function to add spec item
-function Add-SpecItem($label, $value, $color = '#1A1A1A') {
-    $sp = New-Object System.Windows.Controls.StackPanel
-    $sp.Orientation = 'Horizontal'
-    $sp.Margin = [System.Windows.Thickness]::new(0, 2, 0, 2)
-    
-    $lbl = New-Object System.Windows.Controls.TextBlock
-    $lbl.Text = "$label"
-    $lbl.FontWeight = 'SemiBold'
-    $lbl.Width = 180
-    $lbl.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#666666')
-    
-    $val = New-Object System.Windows.Controls.TextBlock
-    $val.Text = $value
-    $val.TextWrapping = 'Wrap'
-    $val.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString($color)
-    
-    $sp.Children.Add($lbl) | Out-Null
-    $sp.Children.Add($val) | Out-Null
-    
-    return $sp
-}
-
-if (-not ('NativeDisplay' -as [type])) {
-    Add-Type @"
+Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
 
@@ -512,6 +466,7 @@ public class NativeDisplay
         public short dmYResolution;
         public short dmTTOption;
         public short dmCollate;
+
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = CCHFORMNAME)]
         public string dmFormName;
         public short dmLogPixels;
@@ -534,7 +489,6 @@ public class NativeDisplay
     public static extern bool EnumDisplaySettings(string deviceName, int modeNum, ref DEVMODE devMode);
 }
 "@
-}
 
 function Get-DisplayRefreshRate([string]$deviceName) {
     try {
@@ -582,12 +536,12 @@ $tabMain.Add_SelectionChanged({
         $ram = $null
         $lic = $null
 
-        try { $cs = Get-CimInstance Win32_ComputerSystem } catch {}
-        try { $bios = Get-CimInstance Win32_BIOS } catch {}
-        try { $os = Get-CimInstance Win32_OperatingSystem } catch {}
-        try { $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1 } catch {}
-        try { $ram = Get-CimInstance Win32_PhysicalMemory } catch {}
-        try { $lic = Get-CimInstance SoftwareLicensingProduct | Where-Object { $_.PartialProductKey -and $_.LicenseStatus -eq 1 } } catch {}
+        try { $cs = Get-CimInstance Win32_ComputerSystem -ErrorAction Stop } catch {}
+        try { $bios = Get-CimInstance Win32_BIOS -ErrorAction Stop } catch {}
+        try { $os = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop } catch {}
+        try { $cpu = Get-CimInstance Win32_Processor -ErrorAction Stop | Select-Object -First 1 } catch {}
+        try { $ram = Get-CimInstance Win32_PhysicalMemory -ErrorAction Stop } catch {}
+        try { $lic = Get-CimInstance SoftwareLicensingProduct -ErrorAction Stop | Where-Object { $_.PartialProductKey -and $_.LicenseStatus -eq 1 } } catch {}
 
         # 1. GENERAL INFORMATION
         $panelSpecs.Children.Add((New-GroupHeader 'General Information')) | Out-Null
