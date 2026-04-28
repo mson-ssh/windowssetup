@@ -133,15 +133,51 @@ if (-not $scriptDir) {
 
             <TabItem Header="Activation">
                 <StackPanel Margin="20,16,20,16">
-                    <TextBlock x:Name="lblActStatus" FontSize="14" Margin="0,0,0,20"
-                               Foreground="#444444" Text="Checking status..."/>
-                    <TextBlock Text="Select method:" Foreground="#666666" FontSize="12" Margin="0,0,0,8"/>
+
+                    <!-- Status Section -->
+                    <TextBlock Text="Activation Status" FontSize="13" FontWeight="SemiBold"
+                               Foreground="#0078D4" Margin="0,0,0,10"/>
+
+                    <Grid Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="160"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Windows:" FontSize="13"
+                                   Foreground="#444444" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" x:Name="lblWinStatus" FontSize="13"
+                                   FontWeight="SemiBold" Foreground="#666666"
+                                   Text="Checking..." VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="160"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Microsoft Office:" FontSize="13"
+                                   Foreground="#444444" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" x:Name="lblOfficeStatus" FontSize="13"
+                                   FontWeight="SemiBold" Foreground="#666666"
+                                   Text="Checking..." VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <!-- Method Section -->
+                    <TextBlock Text="Select activation method:" Foreground="#666666"
+                               FontSize="12" Margin="0,0,0,8"/>
                     <RadioButton x:Name="rbHWID"   Content="HWID  —  Permanent, hardware-based (Windows 10/11)" IsChecked="True"/>
                     <RadioButton x:Name="rbKMS38"  Content="KMS38  —  Until 2038, auto-renew"/>
-                    <RadioButton x:Name="rbOhook"  Content="Ohook  —  Microsoft 365, offline"/>
-                    <Button x:Name="btnActivate" Content="Activate Now"
-                            Width="140" HorizontalAlignment="Left" Margin="0,20,0,0"
-                            Background="#0078D4" Foreground="White"/>
+                    <RadioButton x:Name="rbOhook"  Content="Ohook  —  Microsoft 365 (offline)"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                        <Button x:Name="btnActivate" Content="Activate Now"
+                                Width="130" Margin="0,0,10,0"
+                                Background="#0078D4" Foreground="White"/>
+                        <Button x:Name="btnRefreshStatus" Content="Refresh Status"
+                                Width="120"
+                                Background="#6C757D" Foreground="White"/>
+                    </StackPanel>
+
                 </StackPanel>
             </TabItem>
 
@@ -203,22 +239,24 @@ Add-Type -AssemblyName WindowsBase
 $reader = [System.Xml.XmlNodeReader]::new($xaml)
 $window = [Windows.Markup.XamlReader]::Load($reader)
 
-$panelApps    = $window.FindName('panelApps')
-$panelOpt     = $window.FindName('panelOptimize')
-$panelSpecs   = $window.FindName('panelSpecs')
-$lblActStatus = $window.FindName('lblActStatus')
-$rbHWID       = $window.FindName('rbHWID')
-$rbKMS38      = $window.FindName('rbKMS38')
-$rbOhook      = $window.FindName('rbOhook')
-$btnActivate  = $window.FindName('btnActivate')
-$btnSelectAll = $window.FindName('btnSelectAll')
-$btnDeselect  = $window.FindName('btnDeselectAll')
-$btnDefault   = $window.FindName('btnDefault')
-$btnDryRun    = $window.FindName('btnDryRun')
-$progressBar  = $window.FindName('progressBar')
-$lblStatus    = $window.FindName('lblStatus')
-$btnRun       = $window.FindName('btnRun')
-$btnLog       = $window.FindName('btnLog')
+$panelApps         = $window.FindName('panelApps')
+$panelOpt          = $window.FindName('panelOptimize')
+$panelSpecs        = $window.FindName('panelSpecs')
+$lblWinStatus      = $window.FindName('lblWinStatus')
+$lblOfficeStatus   = $window.FindName('lblOfficeStatus')
+$rbHWID            = $window.FindName('rbHWID')
+$rbKMS38           = $window.FindName('rbKMS38')
+$rbOhook           = $window.FindName('rbOhook')
+$btnActivate       = $window.FindName('btnActivate')
+$btnRefreshStatus  = $window.FindName('btnRefreshStatus')
+$btnSelectAll      = $window.FindName('btnSelectAll')
+$btnDeselect       = $window.FindName('btnDeselectAll')
+$btnDefault        = $window.FindName('btnDefault')
+$btnDryRun         = $window.FindName('btnDryRun')
+$progressBar       = $window.FindName('progressBar')
+$lblStatus         = $window.FindName('lblStatus')
+$btnRun            = $window.FindName('btnRun')
+$btnLog            = $window.FindName('btnLog')
 
 # =====================================================================
 # HELPER: create group header
@@ -285,39 +323,53 @@ $btnDefault.Add_Click({
 # =====================================================================
 # TAB 2: Activation status
 # =====================================================================
-try {
-    $actStatus = Get-ActivationStatus
-    $lblActStatus.Text       = "Status: $actStatus"
-    $lblActStatus.Foreground = if ($actStatus -eq 'Activated') {
-        [System.Windows.Media.BrushConverter]::new().ConvertFromString('#107C10')
-    } else {
-        [System.Windows.Media.BrushConverter]::new().ConvertFromString('#D83B01')
+function Set-ActivationStatusLabel($label, [string]$prefix, [string]$status) {
+    $label.Text = "$prefix $status"
+
+    $color = switch ($status) {
+        'Activated' { '#107C10' }
+        'Not Activated' { '#D83B01' }
+        default { '#666666' }
     }
-} catch {
-    $lblActStatus.Text = 'Status: Unknown'
+
+    $label.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString($color)
 }
+
+function Refresh-ActivationStatus {
+    try {
+        $windowsStatus = Get-WindowsActivationStatus
+    } catch {
+        $windowsStatus = 'Unknown'
+    }
+
+    try {
+        $officeStatus = Get-OfficeActivationStatus
+    } catch {
+        $officeStatus = 'Unknown'
+    }
+
+    Set-ActivationStatusLabel $lblWinStatus 'Windows Status:' $windowsStatus
+    Set-ActivationStatusLabel $lblOfficeStatus 'Office Status:' $officeStatus
+}
+
+Refresh-ActivationStatus
+
+$btnRefreshStatus.Add_Click({
+    Refresh-ActivationStatus
+    $lblStatus.Text = 'Activation status refreshed.'
+})
 
 $btnActivate.Add_Click({
     $method = if ($rbHWID.IsChecked) { 'HWID' } elseif ($rbKMS38.IsChecked) { 'KMS38' } else { 'Ohook' }
     $r = [System.Windows.MessageBox]::Show(
-        "Confirm activation with $method?", 'MiniApp',
+        "Confirm activation with $method?", 'WinSetup Pro',
         [System.Windows.MessageBoxButton]::YesNo,
         [System.Windows.MessageBoxImage]::Question)
     if ($r -eq 'Yes') {
         $lblStatus.Text = "Activating ($method)..."
         Invoke-Activation -Method $method
+        Refresh-ActivationStatus
         $lblStatus.Text = 'Activation complete!'
-        
-        # Refresh activation status label
-        try {
-            $newStatus = Get-ActivationStatus
-            $lblActStatus.Text = "Status: $newStatus"
-            $lblActStatus.Foreground = if ($newStatus -eq 'Activated') {
-                [System.Windows.Media.BrushConverter]::new().ConvertFromString('#107C10')
-            } else {
-                [System.Windows.Media.BrushConverter]::new().ConvertFromString('#D83B01')
-            }
-        } catch {}
     }
 })
 
@@ -402,15 +454,7 @@ $btnRun.Add_Click({
             $progressBar.Value = 1
             $lblStatus.Text = 'Activation complete!'
 
-            try {
-                $newStatus = Get-ActivationStatus
-                $lblActStatus.Text = "Status: $newStatus"
-                $lblActStatus.Foreground = if ($newStatus -eq 'Activated') {
-                    [System.Windows.Media.BrushConverter]::new().ConvertFromString('#107C10')
-                } else {
-                    [System.Windows.Media.BrushConverter]::new().ConvertFromString('#D83B01')
-                }
-            } catch {}
+            Refresh-ActivationStatus
         }
 
         2 {
