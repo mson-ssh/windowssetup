@@ -1,13 +1,25 @@
 # activation.ps1 - Activate Windows / Office via Microsoft Activation Scripts (MAS)
 
 function Get-ActivationStatus {
-    $status = (Get-CimInstance -ClassName SoftwareLicensingProduct -Filter "Name like 'Windows%'" |
-        Where-Object { $_.PartialProductKey } |
-        Select-Object -First 1).LicenseStatus
-    switch ($status) {
-        1 { return 'Activated' }
-        0 { return 'Not Activated' }
-        default { return "Unknown ($status)" }
+    try {
+        $product = Get-CimInstance -ClassName SoftwareLicensingProduct -Filter "Name like 'Windows%'" -ErrorAction Stop |
+            Where-Object { $_.PartialProductKey } |
+            Select-Object -First 1
+
+        if (-not $product) {
+            Write-Log 'Activation status could not be determined from SoftwareLicensingProduct.' 'WARN'
+            return 'Unknown'
+        }
+
+        $status = $product.LicenseStatus
+        switch ($status) {
+            1 { return 'Activated' }
+            0 { return 'Not Activated' }
+            default { return "Unknown ($status)" }
+        }
+    } catch {
+        Write-Log "Activation status check failed: $_" 'WARN'
+        return 'Unknown'
     }
 }
 
