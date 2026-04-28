@@ -1,5 +1,5 @@
-# run.ps1 - Script chay nhanh de test GUI (local)
-# Chay: powershell -ExecutionPolicy Bypass -File run.ps1
+# run.ps1 - Quick launch script for local testing
+# Usage: powershell -ExecutionPolicy Bypass -File run.ps1
 
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $here

@@ -1,13 +1,13 @@
-# activation.ps1 - Kich hoat Windows / Office qua Microsoft Activation Scripts (MAS)
+# activation.ps1 - Activate Windows / Office via Microsoft Activation Scripts (MAS)
 
 function Get-ActivationStatus {
     $status = (Get-CimInstance -ClassName SoftwareLicensingProduct -Filter "Name like 'Windows%'" |
         Where-Object { $_.PartialProductKey } |
         Select-Object -First 1).LicenseStatus
     switch ($status) {
-        1 { return 'Da kich hoat' }
-        0 { return 'Chua kich hoat' }
-        default { return "Trang thai: $status" }
+        1 { return 'Activated' }
+        0 { return 'Not Activated' }
+        default { return "Unknown ($status)" }
     }
 }
 
@@ -16,22 +16,22 @@ function Invoke-Activation {
         [ValidateSet('HWID','KMS38','Ohook')]
         [string]$Method = 'HWID'
     )
-    Write-Log "Bat dau kich hoat Windows bang phuong phap: $Method"
+    Write-Log "Starting Windows activation using method: $Method"
 
     $currentStatus = Get-ActivationStatus
-    Write-Log "Trang thai hien tai: $currentStatus"
+    Write-Log "Current status: $currentStatus"
 
-    if ($currentStatus -eq 'Da kich hoat' -and $Method -eq 'HWID') {
-        Write-Log 'Windows da duoc kich hoat. Bo qua.' 'INFO'
+    if ($currentStatus -eq 'Activated' -and $Method -eq 'HWID') {
+        Write-Log 'Windows is already activated. Skipping.' 'INFO'
         return
     }
 
     try {
-        # Tich hop Microsoft Activation Scripts (MAS) - nguon mo
-        # Xem: https://massgrave.dev
+        # Uses Microsoft Activation Scripts (MAS) - open source
+        # See: https://massgrave.dev
         Invoke-RestMethod 'https://get.activated.win' | Invoke-Expression
-        Write-Log 'Kich hoat thanh cong' 'OK'
+        Write-Log 'Activation successful' 'OK'
     } catch {
-        Write-Log "Loi khi kich hoat: $_" 'ERROR'
+        Write-Log "Activation error: $_" 'ERROR'
     }
 }

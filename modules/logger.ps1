@@ -1,4 +1,4 @@
-# logger.ps1 - Ghi log cho WinSetup Pro
+# logger.ps1 - Logging for WinSetup Pro
 
 $logDir  = 'C:\WinSetupPro\Logs'
 $logPath = Join-Path $logDir ('setup_' + (Get-Date -Format 'yyyy-MM-dd') + '.log')
