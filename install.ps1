@@ -35,7 +35,11 @@ try {
     
     Write-Host "Extracting..." -ForegroundColor $c.Info -NoNewline
     Expand-Archive -Path $zipFile -DestinationPath $extractDir -Force
-    $projectDir = Get-ChildItem $extractDir -Directory | Select-Object -First 1 -ExpandProperty FullName
+    $repoRoot = Get-ChildItem $extractDir -Directory | Select-Object -First 1 -ExpandProperty FullName
+    $projectDir = Join-Path $repoRoot 'winsetup-pro'
+    if (-not (Test-Path (Join-Path $projectDir 'run.ps1'))) {
+        throw "run.ps1 not found in extracted project: $projectDir"
+    }
     Write-Host " OK" -ForegroundColor $c.OK
 } catch {
     Write-Host " FAILED" -ForegroundColor $c.Error
@@ -46,7 +50,7 @@ try {
 # Run
 Write-Host "Launching GUI..." -ForegroundColor $c.Info
 Set-Location $projectDir
-& "$projectDir\run.ps1"
+& (Join-Path $projectDir 'run.ps1')
 
 # Cleanup
 Set-Location $env:TEMP
