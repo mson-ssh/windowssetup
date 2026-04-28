@@ -36,9 +36,15 @@ try {
     Write-Host "Extracting..." -ForegroundColor $c.Info -NoNewline
     Expand-Archive -Path $zipFile -DestinationPath $extractDir -Force
     $repoRoot = Get-ChildItem $extractDir -Directory | Select-Object -First 1 -ExpandProperty FullName
-    $projectDir = Join-Path $repoRoot 'winsetup-pro'
+
+    if (Test-Path (Join-Path $repoRoot 'run.ps1')) {
+        $projectDir = $repoRoot
+    } else {
+        $projectDir = Join-Path $repoRoot 'winsetup-pro'
+    }
+
     if (-not (Test-Path (Join-Path $projectDir 'run.ps1'))) {
-        throw "run.ps1 not found in extracted project: $projectDir"
+        throw "run.ps1 not found in extracted project. Checked: $repoRoot and $projectDir"
     }
     Write-Host " OK" -ForegroundColor $c.OK
 } catch {
