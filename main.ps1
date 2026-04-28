@@ -166,7 +166,6 @@ if (-not $scriptDir) {
                     <TextBlock Text="Select activation method:" Foreground="#666666"
                                FontSize="12" Margin="0,0,0,8"/>
                     <RadioButton x:Name="rbHWID"   Content="HWID  —  Permanent, hardware-based (Windows 10/11)" IsChecked="True"/>
-                    <RadioButton x:Name="rbKMS38"  Content="KMS38  —  Until 2038, auto-renew"/>
                     <RadioButton x:Name="rbOhook"  Content="Ohook  —  Microsoft 365 (offline)"/>
 
                     <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
@@ -245,7 +244,6 @@ $panelSpecs        = $window.FindName('panelSpecs')
 $lblWinStatus      = $window.FindName('lblWinStatus')
 $lblOfficeStatus   = $window.FindName('lblOfficeStatus')
 $rbHWID            = $window.FindName('rbHWID')
-$rbKMS38           = $window.FindName('rbKMS38')
 $rbOhook           = $window.FindName('rbOhook')
 $btnActivate       = $window.FindName('btnActivate')
 $btnRefreshStatus  = $window.FindName('btnRefreshStatus')
@@ -360,7 +358,7 @@ $btnRefreshStatus.Add_Click({
 })
 
 $btnActivate.Add_Click({
-    $method = if ($rbHWID.IsChecked) { 'HWID' } elseif ($rbKMS38.IsChecked) { 'KMS38' } else { 'Ohook' }
+    $method = if ($rbHWID.IsChecked) { 'HWID' } else { 'Ohook' }
     $r = [System.Windows.MessageBox]::Show(
         "Confirm activation with $method?", 'WinSetup Pro',
         [System.Windows.MessageBoxButton]::YesNo,
@@ -435,7 +433,7 @@ $btnRun.Add_Click({
         }
 
         1 {
-            $method = if ($rbHWID.IsChecked) { 'HWID' } elseif ($rbKMS38.IsChecked) { 'KMS38' } else { 'Ohook' }
+            $method = if ($rbHWID.IsChecked) { 'HWID' } else { 'Ohook' }
             $r = [System.Windows.MessageBox]::Show(
                 "Confirm activation with $method?", 'WinSetup Pro',
                 [System.Windows.MessageBoxButton]::YesNo,
