@@ -3,6 +3,9 @@
 
 #Requires -RunAsAdministrator
 
+# Set execution policy to bypass
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+
 $ErrorActionPreference = 'Stop'
 
 # Colors
