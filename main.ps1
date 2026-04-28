@@ -194,8 +194,12 @@ if (-not $scriptDir) {
 '@
 
 # =====================================================================
-# LOAD XAML
+# LOAD WPF ASSEMBLIES + XAML
 # =====================================================================
+Add-Type -AssemblyName PresentationFramework
+Add-Type -AssemblyName PresentationCore
+Add-Type -AssemblyName WindowsBase
+
 $reader = [System.Xml.XmlNodeReader]::new($xaml)
 $window = [Windows.Markup.XamlReader]::Load($reader)
 
