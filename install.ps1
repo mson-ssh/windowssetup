@@ -50,7 +50,8 @@ try {
 # Run
 Write-Host "Launching GUI..." -ForegroundColor $c.Info
 Set-Location $projectDir
-& (Join-Path $projectDir 'run.ps1')
+$powershellExe = if (Get-Command 'powershell.exe' -ErrorAction SilentlyContinue) { 'powershell.exe' } else { 'pwsh.exe' }
+& $powershellExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $projectDir 'run.ps1')
 
 # Cleanup
 Set-Location $env:TEMP
