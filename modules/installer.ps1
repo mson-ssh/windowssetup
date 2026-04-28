@@ -16,6 +16,42 @@ function Get-PackageManager {
     return 'scoop'
 }
 
+# --- Lấy toàn bộ tên app đã cài từ registry (gọi một lần) ---
+function Get-InstalledAppNames {
+    $paths = @(
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*'
+    )
+    $names = @()
+    foreach ($p in $paths) {
+        $names += Get-ItemProperty $p -ErrorAction SilentlyContinue |
+            Where-Object { $_.DisplayName } |
+            Select-Object -ExpandProperty DisplayName
+    }
+    return $names | Sort-Object -Unique
+}
+
+# --- Kiểm tra app đã cài chưa ---
+function Test-AppInstalled {
+    param($App, [string[]]$InstalledNames)
+
+    # So sánh tên app với DisplayName trong registry (không phân biệt hoa thường)
+    $appName = $App.name
+    $match = $InstalledNames | Where-Object { $_ -like "*$appName*" -or $appName -like "*$_*" }
+    if ($match) { return $true }
+
+    # Fallback: winget list --id (nếu có winget ID)
+    if ($App.winget -and (Get-Command winget -ErrorAction SilentlyContinue)) {
+        $out = winget list --id $App.winget --exact --accept-source-agreements 2>&1
+        if ($LASTEXITCODE -eq 0 -and ($out | Select-String ([regex]::Escape($App.winget)))) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
 function Get-AppList {
     param([string]$ConfigPath)
     if (-not (Test-Path $ConfigPath)) {
@@ -124,7 +160,27 @@ function Install-ViaPackageManager {
 # --- Main function: install list of apps (parallel) ---
 function Install-Apps {
     param([array]$Apps)
-    
+
+    # Kiểm tra app đã cài trước khi bắt đầu
+    Write-Log "Checking installed apps..."
+    $installedNames = Get-InstalledAppNames
+    $appsToInstall = @()
+    foreach ($app in $Apps) {
+        if (Test-AppInstalled -App $app -InstalledNames $installedNames) {
+            Write-Log "Already installed, skipping: $($app.name)" 'INFO'
+        } else {
+            $appsToInstall += $app
+        }
+    }
+
+    if ($appsToInstall.Count -eq 0) {
+        Write-Log "All selected apps are already installed. Nothing to do." 'INFO'
+        return
+    }
+
+    Write-Log "$($appsToInstall.Count) of $($Apps.Count) apps need installation."
+    $Apps = $appsToInstall
+
     $pm = Get-PackageManager
     Write-Log "Package manager: $pm"
     Write-Log "Starting parallel installation of $($Apps.Count) apps..."
